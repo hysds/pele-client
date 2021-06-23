@@ -1,61 +1,51 @@
-# [REPO NAME]
-> Single sentence describing the purpose of your repo
+# pele_client
+REST-based class for issuing Pele requests (HySDS Datasets API)
 
-[Workflow status badges - see [docs](https://docs.github.com/en/actions/managing-workflow-runs/adding-a-workflow-status-badge)]
+### Installation
+First, gdal (osgeo) must be installed via conda using the conda-forge channel:
+```
+conda install -c requirements.txt.forge
+```
+then the client is installed:
+``` 
+python setup.py install
+```
 
-More detailed description of your repository here
+### Examples
+To have the requests client automatically renew the client session upon expiration, ensure your login creds are set in your .netrc file, e.g.
+```
+bash
+cat ~/.netrc
+# machine localhost login koa@test.com password test
+# macdef init
 
-![](header.png) [Screenshot of your software, if applicable]
 
-## Build Instructions
+```
+The Pele requests client will then use your creds to attain an API token to use for subsequent API calls. When the token expires, the client will refresh the token automatically:
+```
+python
+from pele_client.client import PeleRequests
 
-[Modify as/if needed]
+base_url = "http://localhost:8877/api/v0.1"
 
-e.g.
+# instantiate PeleRequests object
+pr = PeleRequests(base_url)
 
-Built using the ARIA HySDS Jenkins Continuous Integration (CI) pipeline.
+# now use like requests module (`request()`, `get()`, `head()`, `post()`, `put()`, `delete()`, `patch()`)
+r = pr.get(base_url + '/test/echo', params={'echo_str': 'hello world'})
 
-More information about this process can be found [here](https://hysds-core.atlassian.net/wiki/spaces/HYS/pages/455114757/Deploy+PGE+s+onto+Cluster)
+```
+The utility function ```getPeleExtentFromOGRFile``` extracts the bounding box encompassing the layer/features in the given OGR-compliant file. If the file is multi-layer, an
+optional layer name can be specified, otherwise the first/top layer is used by default. The format of the returned extent is compatible with Pele geospatial searches.
+```
+from pele_client.client import PeleRequests, getPeleExtentFromOGRFile
 
-## Run Instructions
+pr = PeleRequests('https://100.64.122.98/pele/api/v0.1', verify=False)
 
-[Modify as/if needed and add any customizations for your code]
+extent = getPeleExtentFromOGRFile('/home/wasabi/ucayali_boundary.geojson', 'ucayali_boundary')
 
-e.g.
+response = pr.post(base_url + '/pele/dataset/L2_L_GSLC/dataset_ids', json = { 'polygon' : extent })
+response_json = response.json()
 
-You may run your customized PGE via two methods that are documented below:
-- An [on-demand (one-time) job](https://hysds-core.atlassian.net/wiki/spaces/HYS/pages/378601499/Submit+an+On-Demand+Job+in+Facet+Search)
-- [Create a trigger rule](https://hysds-core.atlassian.net/wiki/spaces/HYS/pages/442728660/Create+Edit+Delete+Trigger+Rules) to invoke your PGE based on conditions
-
-## Release History
-
-* 0.2.1
-    * CHANGE: Update docs (module code remains unchanged)
-* 0.2.0
-    * CHANGE: Remove `setDefaultXYZ()`
-    * ADD: Add `init()`
-* 0.1.1
-    * FIX: Crash when calling `baz()` (Thanks @GenerousContributorName!)
-* 0.1.0
-    * The first proper release
-    * CHANGE: Rename `foo()` to `bar()`
-* 0.0.1
-    * Work in progress
-
-## Frequently Asked Questions (FAQ)
-
-1. Question 1
-   - Answer to question 1
-2. Question 2
-   - Answer to question 2
-
-## Contributing
-
-1. Create an GitHub issue ticket desrcribing what changes you need (e.g. issue-1)
-2. Fork this repo
-3. Make your modifications in your own fork
-4. Make a pull-request in this repo with the code in your fork and tag the repo owner / largest contributor as a reviewer
-
-## Support
-
-Any specific contact information regarding leadership / maintenance of this repository
+datasets = ressponse_json['dataset_ids']
+```
